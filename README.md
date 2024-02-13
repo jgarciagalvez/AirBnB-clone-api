@@ -1,1 +1,4 @@
-# B11G05-airbnb-api
+# Airbnb API
+### Batch 11 Group 05
+- Jesus
+- Irteza
