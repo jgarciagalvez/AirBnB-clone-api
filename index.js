@@ -2,6 +2,7 @@
 import express from 'express'
 import userRouter from './routes/usersRoutes.js'
 import housesRouter from './routes/housesRoutes.js'
+import reviewsRouter from './routes/reviewsRoutes.js'
 
 const app = express()
 

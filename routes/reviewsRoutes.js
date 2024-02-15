@@ -1,6 +1,5 @@
 import { Router } from 'express'
-import router from './usersRoutes'
-const router = router()
+const router = Router()
 
 // Define a GET route for fetching all reviews
 router.get('/reviews', (req, res) => {
