@@ -4,7 +4,7 @@ const router = Router()
 
 // Define a Get route for fetching the list of houses
 router.get('/houses', (req, res) => {
-  res.send('Hello from Houses')
+  res.json([{ id: 1, location: 'Koh Phangan', rooms: 4 }])
 })
 
 // Export the router
