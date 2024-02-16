@@ -3,7 +3,7 @@ import { Router } from 'express'
 const router = Router()
 
 // dummy data
-const photots = [
+const photos = [
   {
     id: 1,
     user_id: 1,
@@ -26,12 +26,12 @@ const photots = [
 
 // Fetch all photos
 router.get('/photos', (req, res) => {
-  res.json(photots)
+  res.json(photos)
 })
 
 // Fetch photos with index of 1
 router.get('/photos/1', (req, res) => {
-  res.json(photots[1])
+  res.json(photos[1])
 })
 
 export default router
