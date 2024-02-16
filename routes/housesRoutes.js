@@ -11,7 +11,7 @@ router.get('/houses', async (req, res) => {
     const { rows } = await db.query('SELECT * FROM houses')
     res.json(rows)
   } catch (err) {
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
@@ -24,7 +24,7 @@ router.get('/houses/2', async (req, res) => {
     )
     res.json(rows)
   } catch (err) {
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
