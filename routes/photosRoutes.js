@@ -24,12 +24,12 @@ const photots = [
   }
 ]
 
-// Fetch all bookings
+// Fetch all photots
 router.get('/photots', (req, res) => {
   res.json(photots)
 })
 
-// Fetch bookings with index of 1
+// Fetch photots with index of 1
 router.get('/photots/1', (req, res) => {
   res.json(photots[1])
 })
