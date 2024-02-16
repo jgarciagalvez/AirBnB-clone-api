@@ -16,8 +16,8 @@ router.get('/houses', async (req, res) => {
 })
 
 // Define a Get route for fetching individual house
-router.get('/houses/1', async (req, res) => {
-  let house_id = 1
+router.get('/houses/2', async (req, res) => {
+  let house_id = 2
   try {
     const { rows } = await db.query(
       `SELECT * FROM houses WHERE house_id = ${house_id}`
