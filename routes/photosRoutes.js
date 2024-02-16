@@ -24,13 +24,13 @@ const photots = [
   }
 ]
 
-// Fetch all photots
-router.get('/photots', (req, res) => {
+// Fetch all photos
+router.get('/photos', (req, res) => {
   res.json(photots)
 })
 
-// Fetch photots with index of 1
-router.get('/photots/1', (req, res) => {
+// Fetch photos with index of 1
+router.get('/photos/1', (req, res) => {
   res.json(photots[1])
 })
 
