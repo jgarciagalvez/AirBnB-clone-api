@@ -7,6 +7,7 @@ import housesRouter from './routes/housesRoutes.js'
 import reviewsRouter from './routes/reviewsRoutes.js'
 import bookingsRouter from './routes/bookingsRoutes.js'
 import photosRouter from './routes/photosRoutes.js'
+import authRouter from './routes/authRoutes.js'
 
 // Start app
 const app = express()
@@ -17,6 +18,7 @@ app.use(housesRouter)
 app.use(reviewsRouter)
 app.use(bookingsRouter)
 app.use(photosRouter)
+app.use(authRouter)
 
 // Start server
 app.listen(4100, () => {
