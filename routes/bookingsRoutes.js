@@ -14,11 +14,15 @@ router.get('/bookings', async (req, res) => {
 })
 
 // Fetch bookings with index of 1
-router.get('/bookings/1', async (req, res) => {
+router.get('/bookings/:bookingId', async (req, res) => {
+  const { bookingId } = req.params
   try {
     const { rows } = await db.query(
-      'SELECT * FROM bookings WHERE booking_id = 1'
+      `SELECT * FROM bookings WHERE booking_id = ${bookingId}`
     )
+    if (!rows.length) {
+      throw new Error('Booking Id not found.')
+    }
     res.json(rows[0])
   } catch (err) {
     res.json({ error: err.message })
