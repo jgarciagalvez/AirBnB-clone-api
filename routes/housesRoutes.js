@@ -16,12 +16,15 @@ router.get('/houses', async (req, res) => {
 })
 
 // Define a Get route for fetching individual house
-router.get('/houses/2', async (req, res) => {
-  let house_id = 2
+router.get('/houses/:house_id', async (req, res) => {
+  let house_id = req.params.house_id
   try {
     const { rows } = await db.query(
       `SELECT * FROM houses WHERE house_id = ${house_id}`
     )
+    if (!rows.length) {
+      throw new Error('Property not found')
+    }
     res.json(rows)
   } catch (err) {
     res.json({ error: err.message })
