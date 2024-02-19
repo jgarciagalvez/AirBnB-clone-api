@@ -16,12 +16,15 @@ router.get('/reviews', async (req, res) => {
 })
 
 // Define a GET route to get a single review
-router.get('/reviews/2', async (req, res) => {
-  let review_id = 2
+router.get('/reviews/:review_id', async (req, res) => {
+  let review_id = req.params.review_id
   try {
     const { rows } = await db.query(
       `SELECT * FROM reviews WHERE review_id = ${review_id}`
     )
+    if (!rows.length) {
+      throw new Error('Review not found')
+    }
     res.json(rows)
   } catch (err) {
     res.json({ error: err.message })
