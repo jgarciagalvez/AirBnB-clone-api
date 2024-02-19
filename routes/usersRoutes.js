@@ -4,14 +4,6 @@ import db from '../db.js'
 const router = Router()
 
 // Fetch all users
-// router.get('/users', (req, res) => {
-//   res.json([
-//     { id: 1, firstName: 'Alice' },
-//     { id: 2, firstName: 'Bob' }
-//   ])
-// })
-
-// Fetch all users
 router.get('/users', async (req, res) => {
   try {
     const { rows } = await db.query('SELECT * FROM users')
@@ -22,9 +14,15 @@ router.get('/users', async (req, res) => {
 })
 
 // Fetch user by userID
-router.get('/users/1', async (req, res) => {
+router.get('/users/:userId', async (req, res) => {
+  const { userId } = req.params
   try {
-    const { rows } = await db.query('SELECT * FROM users WHERE user_id = 1')
+    const { rows } = await db.query(
+      `SELECT * FROM users WHERE user_id = ${userId}`
+    )
+    if (!rows.length) {
+      throw new Error('User Id not found.')
+    }
     res.json(rows[0])
   } catch (err) {
     res.json({ error: err.message })
