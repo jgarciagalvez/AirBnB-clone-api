@@ -2,6 +2,29 @@ import { Router } from 'express'
 import db from '../db.js'
 const router = Router()
 
+// POST API Calls
+// Add new booking to database
+router.post('/bookings', async (req, res) => {
+  try {
+    // INSERT Query with post parameters
+    const newBooking = await db.query(`
+      INSERT INTO bookings (guest_id, house_id, check_in_date, check_out_date, total_price)
+      VALUES (
+        ${req.body.guest_id},
+        ${req.body.house_id},
+        '${req.body.check_in_date}',
+        '${req.body.check_out_date}',
+        ${req.body.total_price}
+        )
+      RETURNING *
+    `)
+    res.json(newBooking)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
+// GET API calls
 // Fetch bookings from database
 router.get('/bookings', async (req, res) => {
   try {
