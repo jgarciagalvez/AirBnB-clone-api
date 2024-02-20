@@ -1,5 +1,8 @@
-// Import necessary files
+// Import files
 import { Router } from 'express'
+import db from '../db.js'
+
+// Start the app
 const router = Router()
 
 // Get user data
@@ -15,11 +18,26 @@ router.get('/signup', (req, res) => {
 })
 
 // Define a Get route for login
-router.get('/login', (req, res) => {
-  res.json(userdata)
+router.post('/login', async (req, res) => {
+  let query = `
+    SELECT * FROM users 
+    WHERE
+    email = '${req.body.email}'
+    AND password = '${req.body.password}'
+    `
+  console.log(query)
+  try {
+    const { rows } = await db.query(query)
+    if (!rows.length) {
+      throw new Error('Incorrect Login Credentials')
+    }
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
 })
 
-// Define a Get route for login
+// Define a Get route for logout
 router.get('/logout', (req, res) => {
   res.json(userdata)
 })
