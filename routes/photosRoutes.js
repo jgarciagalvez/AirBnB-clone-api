@@ -3,6 +3,28 @@ import db from '../db.js'
 
 const router = Router()
 
+// house_pics_id serial PRIMARY KEY,
+// house_id INT REFERENCES houses(house_id) NOT NULL,
+// url VARCHAR(255) NOT NULL
+
+// POST request for photos:
+router.post('/photos', async (req, res) => {
+  const { house_id, url } = req.body
+
+  const finalQuery = `INSERT INTO house_pics (house_id, url)
+  VALUES (${house_id}, '${url}')
+  RETURNING *`
+  try {
+    // console.log('Final Query for post photos: ', finalQuery)
+
+    const { rows } = await db.query(finalQuery)
+
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 // Fetch all photos
 router.get('/photos', async (req, res) => {
   const { house_id } = req.query
@@ -30,11 +52,11 @@ router.get('/photos/:photoId', async (req, res) => {
     const { rows } = await db.query(
       `SELECT * FROM house_pics WHERE house_pic_id = ${photoId}`
     )
-    console.log('Rows in photos: ', rows)
+    // console.log('Rows in photos: ', rows)
     if (!rows.length || rows.length == 0) {
       throw new Error('Photo Id not found.')
     }
-    console.log('Rows in photos: ', rows)
+    // console.log('Rows in photos: ', rows)
 
     res.json(rows[0])
   } catch (err) {
