@@ -7,8 +7,6 @@ const router = Router()
 
 // POST request route for creating houses
 router.post('/houses', async (req, res) => {
-  console.error('req.body : ', req.body)
-
   const {
     location,
     bedrooms,
@@ -24,7 +22,6 @@ router.post('/houses', async (req, res) => {
   `
 
   try {
-    console.log('Final query before request: ', finalQuery)
     const { rows } = await db.query(finalQuery)
 
     res.json(rows)
