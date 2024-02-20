@@ -5,11 +5,21 @@ const router = Router()
 
 // Fetch all photos
 router.get('/photos', async (req, res) => {
+  const { house_id } = req.query
+
   try {
-    const { rows } = await db.query('SELECT * FROM house_pics')
+    if (!house_id) {
+      throw new Error('house parameter is required')
+    }
+    const { rows } = await db.query(
+      `SELECT * FROM house_pics WHERE house_id = ${house_id}`
+    )
+    if (!rows.length) {
+      throw new Error('No house or house photos found.')
+    }
     res.json(rows)
   } catch (err) {
-    res.json(err)
+    res.json({ error: err.message })
   }
 })
 
