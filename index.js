@@ -12,6 +12,9 @@ import authRouter from './routes/authRoutes.js'
 // Start app
 const app = express()
 
+// Middleware to parse JSON bodies
+app.use(express.json())
+
 // Use routes
 app.use(userRouter)
 app.use(housesRouter)
