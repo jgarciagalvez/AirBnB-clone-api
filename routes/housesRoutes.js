@@ -5,6 +5,34 @@ import db from '../db.js'
 // Create router
 const router = Router()
 
+// POST request route for creating houses
+router.post('/houses', async (req, res) => {
+  console.error('req.body : ', req.body)
+
+  const {
+    location,
+    bedrooms,
+    bathrooms,
+    price_per_night,
+    description,
+    host_id
+  } = req.body
+
+  const finalQuery = `INSERT INTO houses (location, bedrooms, bathrooms, price_per_night, description, host_id)
+  VALUES ('${location}', ${bedrooms}, ${bathrooms}, ${price_per_night}, '${description}', ${host_id})
+  RETURNING *
+  `
+
+  try {
+    console.log('Final query before request: ', finalQuery)
+    const { rows } = await db.query(finalQuery)
+
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 // Define a Get route for fetching the list of houses
 router.get('/houses', async (req, res) => {
   // Create Query String to get data from db
