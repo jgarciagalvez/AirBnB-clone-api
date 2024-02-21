@@ -18,19 +18,24 @@ router.post('/signup', async (req, res) => {
 
   // Define finalQuery to fetch data from DB
   const finalQuery =
+    // Initial Query with first_name column as first_name is not nullable:
     `INSERT INTO users (first_name,` +
-    // add last name if it is defined
+    // add last_name column if it is defined
     (last_name ? ` last_name,` : ``) +
-    // add profile_pic if it is defined
+    // add profile_pic column if it is defined
     (profile_pic ? ` profile_pic,` : ``) +
-    ` email, password)
-  VALUES ('${first_name}',` +
+    // add email and password columns as they are not nullable
+    ` email, password)` +
+    // adding values extracted from the req.body
+    `VALUES ('${first_name}',` +
     // add last name if it is defined
     (last_name ? ` '${last_name}',` : ``) +
     // add profile_pic if it is defined
     (profile_pic ? ` '${profile_pic}',` : ``) +
-    ` '${email}', '${password}')
-  RETURNING *`
+    // add email and password
+    ` '${email}', '${password}')` +
+    // return all updated rows
+    `RETURNING *`
 
   try {
     console.log('Final query POST authRoutes: ', finalQuery)
