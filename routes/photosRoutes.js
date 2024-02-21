@@ -64,7 +64,7 @@ router.get('/photos/:photoId', async (req, res) => {
   }
 })
 
-// PATCH ROUTE - Update photos
+// PATCH ROUTE - Update photo
 router.patch('/photos/:photoId', async (req, res) => {
   const { photoId } = req.params
   const { url } = req.body
@@ -78,7 +78,24 @@ router.patch('/photos/:photoId', async (req, res) => {
 
     res.json(rows)
   } catch (err) {
-    res.json({ err: err.message })
+    res.json({ error: err.message })
+  }
+})
+
+// DELETE ROUTE - Delete photo
+router.delete('/photos/:photoId', async (req, res) => {
+  const { photoId } = req.params
+  try {
+    const { rows } = await db.query(
+      `DELETE FROM house_pics WHERE house_pic_id = ${photoId} RETURNING *`
+    )
+    if (!rows.length) {
+      throw new Error('Photo Id not found.')
+    }
+
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
   }
 })
 
