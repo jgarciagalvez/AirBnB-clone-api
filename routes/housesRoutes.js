@@ -30,6 +30,7 @@ router.post('/houses', async (req, res) => {
   }
 })
 
+// GET ROUTES
 // Define a Get route for fetching the list of houses
 router.get('/houses', async (req, res) => {
   // Create Query String to get data from db
@@ -91,6 +92,74 @@ router.get('/houses/:house_id', async (req, res) => {
   try {
     const { rows } = await db.query(
       `SELECT * FROM houses WHERE house_id = ${house_id}`
+    )
+    if (!rows.length) {
+      throw new Error('Property not found')
+    }
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
+// PATCH ROUTE - Update a house based on Payload from PATCH request
+router.patch('/houses/:house_id', async (req, res) => {
+  // Deconstruct body of the PATCH request
+  const { location, bedrooms, bathrooms, price_per_night, description } =
+    req.body
+  const { house_id } = req.params
+
+  // Create BASE Query String to UPDATE data in db
+  let finalQueryStr = 'UPDATE houses'
+  // Define Array to save SET query elements and complete query
+  let setQuery = []
+
+  // Build setQuery with payload from the patch request
+  if (location) {
+    setQuery.push(`location = '${location}'`)
+  }
+  if (bedrooms) {
+    setQuery.push(`bedrooms = ${bedrooms}`)
+  }
+  if (bathrooms) {
+    setQuery.push(`bathrooms = ${bathrooms}`)
+  }
+  if (price_per_night) {
+    setQuery.push(`price_per_night = ${price_per_night}`)
+  }
+  if (description) {
+    setQuery.push(`description = '${description}'`)
+  }
+
+  // Build the final UPDATE Query using the elements of the array
+  if (setQuery.length) {
+    finalQueryStr +=
+      ' SET ' +
+      setQuery.join(', ') +
+      ` WHERE house_id = ${house_id} RETURNING *`
+  } else {
+    throw new Error('Please provide valid fields to update')
+  }
+
+  // UPDATE Database
+  try {
+    const { rows } = await db.query(finalQueryStr)
+    if (!rows.length) {
+      throw new Error('There was an error with the update')
+    }
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
+// DELETE ROUTE
+// Define a route for deleting individual house
+router.delete('/houses/:house_id', async (req, res) => {
+  let house_id = req.params.house_id
+  try {
+    const { rows } = await db.query(
+      `DELETE FROM houses WHERE house_id = ${house_id} RETURNING *`
     )
     if (!rows.length) {
       throw new Error('Property not found')
