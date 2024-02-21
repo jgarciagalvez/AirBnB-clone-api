@@ -14,20 +14,52 @@ const userdata = [
 // POST route for signup
 router.post('/signup', async (req, res) => {
   // Deconstruct body request
-  const { first_name, last_name, profile_pic, email, password } = req.body
+  let { first_name, last_name, profile_pic, email, password } = req.body
 
   // Define finalQuery to fetch data from DB
-  const finalQuery = `INSERT INTO users (first_name, last_name, profile_pic, email, password)
-  VALUES ('${first_name}', '${last_name}', '${profile_pic}', '${email}', '${password}')
+  const finalQuery =
+    `INSERT INTO users (first_name,` +
+    // add last name if it is defined
+    (last_name ? ` last_name,` : ``) +
+    // add profile_pic if it is defined
+    (profile_pic ? ` profile_pic,` : ``) +
+    ` email, password)
+  VALUES ('${first_name}',` +
+    // add last name if it is defined
+    (last_name ? ` '${last_name}',` : ``) +
+    // add profile_pic if it is defined
+    (profile_pic ? ` '${profile_pic}',` : ``) +
+    ` '${email}', '${password}')
   RETURNING *`
 
   try {
+    console.log('Final query POST authRoutes: ', finalQuery)
+
+    // check if required values are missing
+    if (!first_name || !email || !password) {
+      throw new Error('First name, Email and Password can not be empty.')
+    }
+
+    // check if user already exists
+    const userExists = await db.query(
+      `SELECT * FROM users WHERE email = '${email}'`
+    )
+
+    // if user exists throw error
+    if (userExists.rows.length) {
+      throw new Error('User already exists with this email address.')
+    }
+
     // Fetch data from DB
     const { rows } = await db.query(finalQuery)
 
     res.json(rows)
   } catch (err) {
-    res.json({ error: err.message })
+    if (err.message.includes('unique_email')) {
+      res.json({
+        error: 'User already exists with this email address.'
+      })
+    } else res.json({ error: err.message })
   }
 })
 
