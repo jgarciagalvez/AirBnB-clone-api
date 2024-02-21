@@ -29,4 +29,20 @@ router.get('/bookings/:bookingId', async (req, res) => {
   }
 })
 
+// Delete booking
+router.delete('/bookings/:bookingId', async (req, res) => {
+  try {
+    const { rows } = await db.query(`
+  DELETE FROM bookings WHERE booking_id = ${req.params.bookingId}`)
+    if (!rows.length) {
+      throw new Error('Booking not found')
+    }
+    res.json(rows)
+  } catch (err) {
+    console.log(err.message)
+    res.json(err.message)
+  }
+})
+
+
 export default router
