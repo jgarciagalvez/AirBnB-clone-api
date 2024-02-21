@@ -64,4 +64,22 @@ router.get('/photos/:photoId', async (req, res) => {
   }
 })
 
+// PATCH ROUTE - Update photos
+router.patch('/photos/:photoId', async (req, res) => {
+  const { photoId } = req.params
+  const { url } = req.body
+  try {
+    const { rows } = await db.query(
+      `UPDATE house_pics SET url = '${url}' WHERE house_pic_id = ${photoId} RETURNING *`
+    )
+    if (!rows.length) {
+      throw new Error('Photo Id not found.')
+    }
+
+    res.json(rows)
+  } catch (err) {
+    res.json({ err: err.message })
+  }
+})
+
 export default router
