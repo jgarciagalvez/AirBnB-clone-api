@@ -31,7 +31,7 @@ router.get('/bookings', async (req, res) => {
     // Select Query based on whether there is a userID or not
     let finalQuery = !req.query.userid
       ? 'SELECT * FROM bookings ORDER by check_in_date DESC'
-      : `SELECT * FROM bookings WHERE guest_id = ${req.query.userid} ORDER by check_in_date DESC`
+      : `SELECT * FROM bookings WHERE guest_id = ${req.query.userid} ORDER BY check_in_date DESC`
 
     // Deconstruct rows using finalQuery
     const { rows } = await db.query(finalQuery)
