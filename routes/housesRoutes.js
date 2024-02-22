@@ -9,12 +9,6 @@ const router = Router()
 
 // POST request route for creating houses
 router.post('/houses', async (req, res) => {
-  // getting the jwt token from cookies
-  let token = req.cookies.jwt
-
-  // deconstructing user_id from the jwt token in cookies
-  const { user_id } = jwt.verify(token, jwtSecret)
-
   // deconstructing req.body to get listing data
   const { location, bedrooms, bathrooms, price_per_night, description } =
     req.body
@@ -26,8 +20,19 @@ router.post('/houses', async (req, res) => {
   `
 
   try {
-    // if user_id is not found, or token does not exist or is not valid, throw error
-    if (!user_id || !token) {
+    // getting the jwt token from cookies
+    let token = req.cookies.jwt
+
+    // if token does not exist or is not valid, throw error
+    if (!token) {
+      res.json({ error: 'Invalid authentication token' })
+    }
+
+    // deconstructing user_id from the jwt token in cookies
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // if user_id is not found throw error
+    if (!user_id) {
       res.json({ error: 'Invalid authentication token' })
     }
 
@@ -116,12 +121,6 @@ router.get('/houses/:house_id', async (req, res) => {
 
 // PATCH ROUTE - Update a house based on Payload from PATCH request
 router.patch('/houses/:house_id', async (req, res) => {
-  // getting the jwt token from cookies
-  let token = req.cookies.jwt
-
-  // deconstructing user_id from the jwt token in cookies
-  const { user_id } = jwt.verify(token, jwtSecret)
-
   // Deconstruct body of the PATCH request
   const { location, bedrooms, bathrooms, price_per_night, description } =
     req.body
@@ -161,8 +160,19 @@ router.patch('/houses/:house_id', async (req, res) => {
 
   // UPDATE Database
   try {
-    // if user_id is not found, or token does not exist or is not valid, throw error
-    if (!user_id || !token) {
+    // getting the jwt token from cookies
+    let token = req.cookies.jwt
+
+    // if token does not exist or is not valid, throw error
+    if (!token) {
+      res.json({ error: 'Invalid authentication token' })
+    }
+
+    // deconstructing user_id from the jwt token in cookies
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // if user_id is not found throw error
+    if (!user_id) {
       res.json({ error: 'Invalid authentication token' })
     }
 
@@ -190,16 +200,21 @@ router.patch('/houses/:house_id', async (req, res) => {
 // DELETE ROUTE
 // Define a route for deleting individual house
 router.delete('/houses/:house_id', async (req, res) => {
-  // getting the jwt token from cookies
-  let token = req.cookies.jwt
-
-  // deconstructing user_id from the jwt token in cookies
-  const { user_id } = jwt.verify(token, jwtSecret)
-
   let house_id = req.params.house_id
   try {
-    // if user_id is not found, or token does not exist or is not valid, throw error
-    if (!user_id || !token) {
+    // getting the jwt token from cookies
+    let token = req.cookies.jwt
+
+    // if token does not exist or is not valid, throw error
+    if (!token) {
+      res.json({ error: 'Invalid authentication token' })
+    }
+
+    // deconstructing user_id from the jwt token in cookies
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // if user_id is not found throw error
+    if (!user_id) {
       res.json({ error: 'Invalid authentication token' })
     }
 
