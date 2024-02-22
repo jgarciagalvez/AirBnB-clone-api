@@ -33,11 +33,12 @@ router.get('/bookings/:bookingId', async (req, res) => {
 router.delete('/bookings/:bookingId', async (req, res) => {
   try {
     const { rows } = await db.query(`
-  DELETE FROM bookings WHERE booking_id = ${req.params.bookingId}`)
+  DELETE FROM bookings WHERE booking_id = ${req.params.bookingId}
+  RETURNING *`)
     if (!rows.length) {
       throw new Error('Booking not found')
     }
-    res.json(rows)
+    res.json('Booking successfully deleted')
   } catch (err) {
     console.log(err.message)
     res.json(err.message)
