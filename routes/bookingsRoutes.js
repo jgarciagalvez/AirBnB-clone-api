@@ -7,7 +7,7 @@ const router = Router()
 router.post('/bookings', async (req, res) => {
   try {
     // INSERT Query with post parameters
-    const newBooking = await db.query(`
+    const { rows } = await db.query(`
       INSERT INTO bookings (guest_id, house_id, check_in_date, check_out_date, total_price)
       VALUES (
         ${req.body.guest_id},
@@ -18,7 +18,7 @@ router.post('/bookings', async (req, res) => {
         )
       RETURNING *
     `)
-    res.json(newBooking)
+    res.json(rows)
   } catch (err) {
     res.json({ error: err.message })
   }
