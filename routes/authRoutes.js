@@ -1,20 +1,23 @@
 // Import files
 import { Router } from 'express'
 import db from '../db.js'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+import { jwtSecret } from '../secrets.js'
 
 // Start app
 const router = Router()
-
-// Dummy data for GET calls
-const userdata = [
-  { user_id: 1, username: 'john@mail.com', password: 1234 },
-  { user_id: 2, username: 'mary@mail.com', password: 56789 }
-]
 
 // POST route for signup
 router.post('/signup', async (req, res) => {
   // Deconstruct body request
   let { first_name, last_name, profile_pic, email, password } = req.body
+
+  // creating salt value
+  const salt = await bcrypt.genSalt(10)
+
+  // useing bcrypt to hash the password
+  const hashedPassword = await bcrypt.hash(password, salt)
 
   // Define finalQuery to fetch data from DB
   const finalQuery =
@@ -32,13 +35,13 @@ router.post('/signup', async (req, res) => {
     (last_name ? ` '${last_name}',` : ``) +
     // add profile_pic if it is defined
     (profile_pic ? ` '${profile_pic}',` : ``) +
-    // add email and password
-    ` '${email}', '${password}')` +
+    // add email and hashed password
+    ` '${email}', '${hashedPassword}')` +
     // return all updated rows
     `RETURNING *`
 
   try {
-    console.log('Final query POST authRoutes: ', finalQuery)
+    // console.log('Final query POST authRoutes: ', finalQuery)
 
     // check if required values are missing
     if (!first_name || !email || !password) {
@@ -57,6 +60,23 @@ router.post('/signup', async (req, res) => {
 
     // Fetch data from DB
     const { rows } = await db.query(finalQuery)
+
+    // throw error if db request fails
+    if (!rows.length) {
+      throw new Error('Failed to sign up.')
+    }
+
+    // define payload for jwt token
+    const payload = {
+      email: rows[0].email,
+      user_id: rows[0].user_id
+    }
+
+    // create jwt token using jwt package
+    const token = jwt.sign(payload, jwtSecret)
+
+    // inserting jwt token in cookie
+    res.cookie('jwt', token)
 
     res.json(rows)
   } catch (err) {
@@ -77,7 +97,6 @@ router.post('/login', async (req, res) => {
     SELECT * FROM users 
     WHERE
     email = '${email}'
-    AND password = '${password}'
     `
   try {
     // Fetch data from DB
@@ -86,6 +105,26 @@ router.post('/login', async (req, res) => {
     if (!rows.length) {
       throw new Error('Incorrect Login Credentials')
     }
+
+    // compare saved hashed password with req.body password
+    const isPasswordValid = await bcrypt.compare(password, rows[0].password)
+
+    // throw error if password does not match with saved hashed password
+    if (!isPasswordValid)
+      throw new Error('Password does not match. Please try again.')
+
+    // define payload for jwt token
+    const payload = {
+      email: rows[0].email,
+      user_id: rows[0].user_id
+    }
+
+    // create jwt token using jwt package
+    const token = jwt.sign(payload, jwtSecret)
+
+    // inserting jwt token in cookie
+    res.cookie('jwt', token)
+    // return data
     res.json(rows)
   } catch (err) {
     res.json({ error: err.message })
@@ -94,7 +133,15 @@ router.post('/login', async (req, res) => {
 
 // Define a Get route for logout
 router.get('/logout', (req, res) => {
-  res.json(userdata)
+  // delete jwt token from cookies
+  try {
+    res.clearCookie('jwt')
+
+    // return a success message
+    res.json({ message: 'You are logged out' })
+  } catch (err) {
+    res.json({ error: err.message })
+  }
 })
 
 // Export the router
