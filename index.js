@@ -1,5 +1,6 @@
 // Packages
 import express from 'express'
+import cookieParser from 'cookie-parser'
 
 // Modules
 import userRouter from './routes/usersRoutes.js'
@@ -14,6 +15,7 @@ const app = express()
 
 // Middleware to parse JSON bodies
 app.use(express.json())
+app.use(cookieParser())
 
 // Use routes
 app.use(userRouter)
