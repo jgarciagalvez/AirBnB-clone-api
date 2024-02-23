@@ -14,12 +14,6 @@ router.post('/houses', async (req, res) => {
     const { location, bedrooms, bathrooms, price_per_night, description } =
       req.body
 
-    // final query that will be sent to db
-    const finalQuery = `INSERT INTO houses (location, bedrooms, bathrooms, price_per_night, description, host_id)
-  VALUES ('${location}', ${bedrooms}, ${bathrooms}, ${price_per_night}, '${description}', ${user_id})
-  RETURNING *
-  `
-
     // getting the jwt token from cookies
     let token = req.cookies.jwt
 
@@ -35,6 +29,12 @@ router.post('/houses', async (req, res) => {
     if (!user_id) {
       throw new Error('Invalid authentication token')
     }
+
+    // final query that will be sent to db
+    const finalQuery = `INSERT INTO houses (location, bedrooms, bathrooms, price_per_night, description, host_id)
+  VALUES ('${location}', ${bedrooms}, ${bathrooms}, ${price_per_night}, '${description}', ${user_id})
+  RETURNING *
+  `
 
     const { rows } = await db.query(finalQuery)
 
@@ -185,7 +185,7 @@ router.patch('/houses/:house_id', async (req, res) => {
     const host_id = houseObj.rows[0].host_id
 
     // throw new error if user_id does not match host_id from db
-    if (host_id !== user_id) throw new Error('You are not authorized')
+    if (Number(userId) !== user_id) throw new Error('You are not authorized')
 
     const { rows } = await db.query(finalQueryStr)
     if (!rows.length) {
@@ -227,7 +227,7 @@ router.delete('/houses/:house_id', async (req, res) => {
     const host_id = houseObj.rows[0].host_id
 
     // throw new error if user_id does not match host_id from db
-    if (host_id !== user_id) throw new Error('You are not authorized')
+    if (Number(userId) !== user_id) throw new Error('You are not authorized')
 
     const { rows } = await db.query(
       `DELETE FROM houses WHERE house_id = ${house_id} RETURNING *`
