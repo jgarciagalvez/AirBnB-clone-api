@@ -181,11 +181,13 @@ router.patch('/houses/:house_id', async (req, res) => {
       `SELECT * FROM houses WHERE house_id = ${house_id}`
     )
 
+    if (!houseObj.rows.length) throw new Error('House Id not found.')
+
     // get host_id from response
     const host_id = houseObj.rows[0].host_id
 
     // throw new error if user_id does not match host_id from db
-    if (Number(userId) !== user_id) throw new Error('You are not authorized')
+    if (host_id !== user_id) throw new Error('You are not authorized')
 
     const { rows } = await db.query(finalQueryStr)
     if (!rows.length) {
@@ -223,11 +225,14 @@ router.delete('/houses/:house_id', async (req, res) => {
       `SELECT * FROM houses WHERE house_id = ${house_id}`
     )
 
+    // Checking if house with that ID exits
+    if (!houseObj.rows.length) throw new Error('House Id not found.')
+
     // get host_id from response
     const host_id = houseObj.rows[0].host_id
 
     // throw new error if user_id does not match host_id from db
-    if (Number(userId) !== user_id) throw new Error('You are not authorized')
+    if (host_id !== user_id) throw new Error('You are not authorized')
 
     const { rows } = await db.query(
       `DELETE FROM houses WHERE house_id = ${house_id} RETURNING *`
