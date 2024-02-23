@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import db from '../db.js'
+import bcrypt from 'bcryptjs'
 import { jwtSecret } from '../secrets.js'
 import jwt from 'jsonwebtoken'
 
@@ -81,10 +82,16 @@ router.patch('/users/:user_id', async (req, res) => {
 
     // if password exists in req.body, update db password
     if (password) {
+      // creating salt value
+      const salt = await bcrypt.genSalt(10)
+
+      // useing bcrypt to hash the password
+      const hashedPassword = await bcrypt.hash(password, salt)
+
       finalQuery +=
         first_name || last_name || email || password
-          ? `, password = '${password}'`
-          : ` password = '${password}'`
+          ? `, password = '${hashedPassword}'`
+          : ` password = '${hashedPassword}'`
     }
 
     // if profile_pic exists in req.body, update db profile_pic
