@@ -1,7 +1,7 @@
 // Import files
 import { Router } from 'express'
 import db from '../db.js'
-import { jwtSecret } from '../secrets.js'
+const jwtSecret = process.env.JWTSECRET
 import jwt from 'jsonwebtoken'
 
 // Create router
