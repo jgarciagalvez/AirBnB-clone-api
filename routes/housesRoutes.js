@@ -48,6 +48,16 @@ router.post('/houses', async (req, res) => {
 })
 
 // GET ROUTES
+// Define a Get route for fetching the list of locations
+router.get('/locations', async (req, res) => {
+  try {
+    const { rows } = await db.query('SELECT DISTINCT location FROM houses')
+    res.json(rows)
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 // Define a Get route for fetching the list of houses
 router.get('/houses', async (req, res) => {
   try {
