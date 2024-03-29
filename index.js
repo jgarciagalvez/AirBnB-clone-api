@@ -1,6 +1,7 @@
 // Packages
 import express from 'express'
 import cookieParser from 'cookie-parser'
+import 'dotenv/config'
 
 // Modules
 import userRouter from './routes/usersRoutes.js'

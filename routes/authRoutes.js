@@ -3,7 +3,7 @@ import { Router } from 'express'
 import db from '../db.js'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken'
-import { jwtSecret } from '../secrets.js'
+const jwtSecret = process.env.JWTSECRET
 
 // Start app
 const router = Router()
@@ -78,7 +78,16 @@ router.post('/signup', async (req, res) => {
     // inserting jwt token in cookie
     res.cookie('jwt', token)
 
-    res.json(rows)
+    // Send response back
+    const signupResponse = {
+      user_id: rows[0].user_id,
+      profile_pic: rows[0].profile_pic,
+      message: 'You are logged in'
+    }
+
+    res.json(signupResponse)
+
+    // Errors
   } catch (err) {
     if (err.message.includes('unique_email')) {
       res.json({
@@ -124,8 +133,17 @@ router.post('/login', async (req, res) => {
 
     // inserting jwt token in cookie
     res.cookie('jwt', token)
-    // return data
-    res.json(rows)
+
+    // Send response back
+    const loginResponse = {
+      user_id: rows[0].user_id,
+      profile_pic: rows[0].profile_pic,
+      message: 'You are logged in'
+    }
+
+    res.json(loginResponse)
+
+    // Errors
   } catch (err) {
     res.json({ error: err.message })
   }
