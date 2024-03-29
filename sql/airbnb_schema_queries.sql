@@ -6,7 +6,7 @@ CREATE TABLE users(
 	last_name VARCHAR(50),
 	profile_pic VARCHAR(255),
 	email VARCHAR(50) NOT NULL,
-	password VARCHAR(50) NOT NULL
+	password VARCHAR(255) NOT NULL
 );
 
 -- Query to create the 'houses' table
