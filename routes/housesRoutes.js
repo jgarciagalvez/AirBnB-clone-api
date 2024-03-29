@@ -52,7 +52,8 @@ router.post('/houses', async (req, res) => {
 router.get('/locations', async (req, res) => {
   try {
     const { rows } = await db.query('SELECT DISTINCT location FROM houses')
-    res.json(rows)
+    const locations = rows.map((row) => row.location)
+    res.json(locations)
   } catch (err) {
     res.json({ error: err.message })
   }
