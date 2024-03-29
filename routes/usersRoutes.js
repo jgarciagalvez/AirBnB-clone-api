@@ -31,8 +31,6 @@ router.get('/users/:userId', async (req, res) => {
     // deconstructing user_id from the jwt token in cookies
     const { user_id } = jwt.verify(token, jwtSecret)
 
-    console.log(jwt.verify(token, jwtSecret))
-
     // if user_id is not found throw error
     if (!user_id) {
       throw new Error('Invalid authentication token')
