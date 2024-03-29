@@ -82,7 +82,7 @@ router.post('/signup', async (req, res) => {
     const signupResponse = {
       user_id: rows[0].user_id,
       profile_pic: rows[0].profile_pic,
-      message: 'You are logged in'
+      message: 'You have successfully signed up'
     }
 
     res.json(signupResponse)
