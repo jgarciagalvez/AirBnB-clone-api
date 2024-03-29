@@ -1,7 +1,7 @@
 import { Router } from 'express'
 import db from '../db.js'
 import bcrypt from 'bcryptjs'
-import { jwtSecret } from '../secrets.js'
+const jwtSecret = process.env.JWTSECRET
 import jwt from 'jsonwebtoken'
 
 const router = Router()
@@ -30,8 +30,6 @@ router.get('/users/:userId', async (req, res) => {
 
     // deconstructing user_id from the jwt token in cookies
     const { user_id } = jwt.verify(token, jwtSecret)
-
-    console.log(jwt.verify(token, jwtSecret))
 
     // if user_id is not found throw error
     if (!user_id) {
