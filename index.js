@@ -2,6 +2,7 @@
 import express from 'express'
 import cookieParser from 'cookie-parser'
 import 'dotenv/config'
+import cors from 'cors'
 
 // Modules
 import userRouter from './routes/usersRoutes.js'
@@ -13,6 +14,14 @@ import authRouter from './routes/authRoutes.js'
 
 // Start app
 const app = express()
+
+// CORS
+app.use(
+  cors({
+    origin: true,
+    credentials: true
+  })
+)
 
 // Middleware to parse JSON bodies
 app.use(express.json())
@@ -27,6 +36,6 @@ app.use(photosRouter)
 app.use(authRouter)
 
 // Start server
-app.listen(4100, () => {
-  console.log('Airbnb API ready on localhost:4100')
+app.listen(process.env.PORT || 4100, () => {
+  console.log(`Airbnb API ready on ${process.env.PORT || 4100}`)
 })
