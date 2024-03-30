@@ -1,8 +1,8 @@
 import { Router } from 'express'
 import db from '../db.js'
 import bcrypt from 'bcryptjs'
-const jwtSecret = process.env.JWTSECRET
 import jwt from 'jsonwebtoken'
+const jwtSecret = process.env.JWTSECRET
 
 const router = Router()
 
@@ -16,31 +16,23 @@ router.get('/users', async (req, res) => {
   }
 })
 
-// Fetch user by userID
-router.get('/users/:userId', async (req, res) => {
+// /profile - Fetch user data using user_id from jwt token
+router.get('/profile', async (req, res) => {
   try {
-    const { userId } = req.params
-    // getting the jwt token from cookies
+    // Validate token
     let token = req.cookies.jwt
-
-    // if token does not exist or is not valid, throw error
     if (!token) {
-      throw new Error('Invalid authentication token')
+      throw new Error('No authorisation token found')
     }
 
-    // deconstructing user_id from the jwt token in cookies
+    // Deconstructing user_id from the jwt token in cookies
     const { user_id } = jwt.verify(token, jwtSecret)
 
-    // if user_id is not found throw error
-    if (!user_id) {
-      throw new Error('Invalid authentication token')
-    }
-
-    if (Number(userId) !== user_id) throw new Error('You are not authorized')
-
-    const { rows } = await db.query(
-      `SELECT * FROM users WHERE user_id = ${userId}`
-    )
+    // Fetch data
+    const { rows } = await db.query(`
+      SELECT user_id, first_name, last_name, profile_pic, email
+      FROM users WHERE user_id = ${user_id}
+    `)
     if (!rows.length) {
       throw new Error('User Id not found.')
     }
@@ -50,12 +42,19 @@ router.get('/users/:userId', async (req, res) => {
   }
 })
 
-router.patch('/users/:user_id', async (req, res) => {
+router.patch('/profile', async (req, res) => {
   try {
-    const userId = req.params.user_id
+    // Validate toketn
+    let token = req.cookies.jwt
+    if (!token) {
+      throw new Error('No authorisation token found')
+    }
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // Deconstructing fields from request
     const { first_name, last_name, email, password, profile_pic } = req.body
 
-    // initial query
+    // Declare initial query
     let finalQuery = `UPDATE users
   SET`
 
@@ -101,30 +100,9 @@ router.patch('/users/:user_id', async (req, res) => {
     }
 
     // add last final query
-    finalQuery += ` WHERE user_id = ${userId}
+    finalQuery += ` WHERE user_id = ${user_id}
   RETURNING *`
 
-    // getting the jwt token from cookies
-    let token = req.cookies.jwt
-
-    // if token does not exist or is not valid, throw error
-    if (!token) {
-      throw new Error('Invalid authentication token')
-    }
-
-    // deconstructing user_id from the jwt token in cookies
-    const { user_id } = jwt.verify(token, jwtSecret)
-
-    // if user_id is not found throw error
-    if (!user_id) {
-      throw new Error('Invalid authentication token')
-    }
-
-    if (Number(userId) !== user_id) throw new Error('You are not authorized')
-
-    // console.log('Final POST query for usersRoutes', finalQuery)
-
-    // deconstructed rows from the db response object
     const { rows } = await db.query(finalQuery)
 
     if (!rows.length) {
