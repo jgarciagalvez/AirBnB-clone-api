@@ -73,10 +73,12 @@ router.get('/reviews', async (req, res) => {
     let sqlquery = `
       SELECT reviews.*, users.first_name, users.last_name, users.profile_pic FROM reviews
       LEFT JOIN users ON users.user_id = reviews.reviewer_id
-      WHERE house_id = ${req.query.house_id}
-      ORDER BY review_date DESC
+      WHERE reviews.house_id = ${req.query.house_id}
+      ORDER BY reviews.review_date DESC
     `
     let { rows } = await db.query(sqlquery)
+
+    console.log('rows: ', rows)
     const formatter = new Intl.DateTimeFormat('en-US', {
       day: '2-digit',
       month: 'short',
@@ -90,7 +92,7 @@ router.get('/reviews', async (req, res) => {
         last_name: r.last_name,
         profile_pic: r.profile_pic
       }
-      r.date = formatter.format(new Date(r.date))
+      r.review_date = formatter.format(new Date(r.review_date))
       delete r.first_name
       delete r.last_name
       delete r.profile_pic
@@ -98,6 +100,7 @@ router.get('/reviews', async (req, res) => {
     })
 
     // API Response
+    console.log('reviews: ', reviews)
     res.json(reviews)
   } catch (err) {
     res.json({ error: err.message })
