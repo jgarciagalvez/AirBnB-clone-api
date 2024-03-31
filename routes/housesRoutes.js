@@ -78,13 +78,12 @@ router.post('/houses', async (req, res) => {
 
     // Compose response
     house.photo = photosCreated.rows[0].photo
-    house.reviews = 0
+    house.review_count = 0
     house.rating = 0
 
     // Response
     res.json(house)
   } catch (err) {
-    console.log('error: ', err.message)
     res.json({ error: err.message })
   }
 })

@@ -78,7 +78,6 @@ router.get('/reviews', async (req, res) => {
     `
     let { rows } = await db.query(sqlquery)
 
-    console.log('rows: ', rows)
     const formatter = new Intl.DateTimeFormat('en-US', {
       day: '2-digit',
       month: 'short',
@@ -100,7 +99,6 @@ router.get('/reviews', async (req, res) => {
     })
 
     // API Response
-    console.log('reviews: ', reviews)
     res.json(reviews)
   } catch (err) {
     res.json({ error: err.message })
@@ -133,7 +131,6 @@ router.delete('/reviews/:review_id', async (req, res) => {
     }
     res.json(rows)
   } catch (err) {
-    console.log(err.message)
     res.json(err.message)
   }
 })
