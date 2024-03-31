@@ -10,39 +10,81 @@ const router = Router()
 // POST request route for creating houses
 router.post('/houses', async (req, res) => {
   try {
-    // deconstructing req.body to get listing data
-    const { location, bedrooms, bathrooms, price_per_night, description } =
-      req.body
-
-    // getting the jwt token from cookies
-    let token = req.cookies.jwt
-
-    // if token does not exist or is not valid, throw error
-    if (!token) {
-      throw new Error('Invalid authentication token')
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
     }
-
-    // deconstructing user_id from the jwt token in cookies
+    let token = req.cookies.jwt
     const { user_id } = jwt.verify(token, jwtSecret)
 
-    // if user_id is not found throw error
-    if (!user_id) {
-      throw new Error('Invalid authentication token')
+    // deconstructing req.body to get listing data
+    const {
+      location,
+      bedrooms,
+      bathrooms,
+      price_per_night,
+      description,
+      photos
+    } = req.body
+
+    // Validations
+    if (
+      !location ||
+      !bedrooms ||
+      !bathrooms ||
+      !price_per_night ||
+      !description ||
+      !photos
+    ) {
+      throw new Error(
+        'location, rooms, bathrooms, price, descriptions, and photos are required'
+      )
+    }
+    // Validate photos
+    if (!Array.isArray(photos)) {
+      throw new Error('photos must be an array')
+    }
+    if (!photos.length) {
+      throw new Error('photos array cannot be empty')
+    }
+    if (!photos.every((p) => typeof p === 'string' && p.length)) {
+      throw new Error('all photos must be strings and must not be empty')
     }
 
     // final query that will be sent to db
     const finalQuery = `INSERT INTO houses (location, bedrooms, bathrooms, price_per_night, description, host_id)
-  VALUES ('${location}', ${bedrooms}, ${bathrooms}, ${price_per_night}, '${description}', ${user_id})
-  RETURNING *
-  `
+    VALUES ('${location}', ${bedrooms}, ${bathrooms}, ${price_per_night}, '${description}', ${user_id})
+    RETURNING *`
 
+    // Create house
     const { rows } = await db.query(finalQuery)
-
     if (!rows.length)
       throw new Error('Error creating the listing, please try again.')
 
-    res.json(rows)
+    let house = rows[0]
+
+    // Add photos
+    let photosQuery = 'INSERT INTO house_pics (house_id, photo) VALUES '
+    photos.forEach((p, i) => {
+      if (i === photos.length - 1) {
+        photosQuery += `(${house.house_id}, '${p}') `
+      } else {
+        photosQuery += `(${house.house_id}, '${p}'), `
+      }
+    })
+    photosQuery += 'RETURNING *'
+
+    let photosCreated = await db.query(photosQuery)
+
+    // Compose response
+    house.photo = photosCreated.rows[0].photo
+    house.reviews = 0
+    house.rating = 0
+
+    // Response
+    res.json(house)
   } catch (err) {
+    console.log('error: ', err.message)
     res.json({ error: err.message })
   }
 })
@@ -62,8 +104,10 @@ router.get('/locations', async (req, res) => {
 // Define a Get route for fetching the list of houses
 router.get('/houses', async (req, res) => {
   try {
-    // Create Query String to get data from db
-    let finalQueryStr = 'SELECT * FROM houses'
+    // Set initial Query String to get data from db
+    let sqlQueryStr = `SELECT * FROM (SELECT DISTINCT ON (houses.house_id) houses.*, house_pics.photo 
+      FROM houses LEFT JOIN house_pics ON houses.house_id = house_pics.house_id`
+
     // Define Arrays to save query elements and complete query
     let filterQuery = []
     let sortQuery = []
@@ -96,19 +140,24 @@ router.get('/houses', async (req, res) => {
     }
 
     // Build Query for the database using the elements of the array
-    // Adds the filter query (if any) to the finalQueryStr
+    // Adds the filter query (if any) to the sqlQueryStr
     if (filterQuery.length) {
-      finalQueryStr += ' WHERE ' + filterQuery.join(' AND ')
+      sqlQueryStr += ' WHERE ' + filterQuery.join(' AND ')
     }
 
-    // Adds the sort query (if any) to the finalQueryStr
+    // Add closing string to the LEFT JOIN
+    sqlQueryStr += ') AS distinct_houses'
+
+    // Adds the sort query (if any) to the sqlQueryStr
     if (sortQuery.length) {
-      finalQueryStr += ' ' + sortQuery.join(' ')
+      sqlQueryStr += ' ' + sortQuery.join(' ')
     }
 
-    // Fetch data from the database using the finalQueryStr
-    const { rows } = await db.query(finalQueryStr)
+    // Fetch data from the database using the sqlQueryStr
+    const { rows } = await db.query(sqlQueryStr)
     res.json(rows)
+
+    // Errors
   } catch (err) {
     res.json({ error: err.message })
   }
@@ -124,7 +173,54 @@ router.get('/houses/:house_id', async (req, res) => {
     if (!rows.length) {
       throw new Error('Property not found')
     }
+    let house = rows[0]
+
+    // Add user info to house
+    let { rows: hostRows } = await db.query(`
+      SELECT user_id, profile_pic, first_name, last_name FROM
+      users WHERE user_id = ${house.host_id}
+    `)
+    house.host = {
+      user_id: hostRows[0].user_id,
+      profile_pic: hostRows[0].profile_pic,
+      first_name: hostRows[0].first_name,
+      last_name: hostRows[0].last_name
+    }
+
+    // Add house photos
+    let { rows: photosRows } = await db.query(`
+      SELECT * FROM house_pics WHERE house_id = ${house.house_id}
+    `)
+    house.images = photosRows.map((p) => p.photo)
+
+    // Delete host_id and send house
+    delete house.host_id
+    res.json(house)
+
+    // Errors
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
+// LISTINGS ROUTE
+router.get('/listings', async (req, res) => {
+  try {
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
+    let token = req.cookies.jwt
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // Fetch listings
+    const { rows } = await db.query(`
+      SELECT * FROM (SELECT DISTINCT ON (houses.house_id) houses.*, house_pics.photo
+      FROM houses LEFT JOIN house_pics ON houses.house_id = house_pics.house_id WHERE host_id = ${user_id}) AS distinct_houses
+    `)
     res.json(rows)
+
+    // Errors
   } catch (err) {
     res.json({ error: err.message })
   }
@@ -132,12 +228,36 @@ router.get('/houses/:house_id', async (req, res) => {
 
 // PATCH ROUTE - Update a house based on Payload from PATCH request
 router.patch('/houses/:house_id', async (req, res) => {
-  // UPDATE Database
   try {
-    // Deconstruct body of the PATCH request
-    const { location, bedrooms, bathrooms, price_per_night, description } =
-      req.body
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
+    let token = req.cookies.jwt
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // authorization check to see if host_id matches the user_id from jwt token
     const { house_id } = req.params
+    const response = await db.query(
+      `SELECT host_id FROM houses WHERE house_id = ${house_id}`
+    )
+    if (!response.rows.length) {
+      throw new Error('House Id not found.')
+    }
+
+    // throw new error if user_id does not match host_id from db
+    if (response.rows[0].host_id !== user_id)
+      throw new Error('You are not authorized')
+
+    // Deconstruct body of the PATCH request
+    const {
+      location,
+      bedrooms,
+      bathrooms,
+      price_per_night,
+      description,
+      photos
+    } = req.body
 
     // Create BASE Query String to UPDATE data in db
     let finalQueryStr = 'UPDATE houses'
@@ -171,40 +291,39 @@ router.patch('/houses/:house_id', async (req, res) => {
       throw new Error('Please provide valid fields to update')
     }
 
-    // getting the jwt token from cookies
-    let token = req.cookies.jwt
-
-    // if token does not exist or is not valid, throw error
-    if (!token) {
-      throw new Error('Invalid authentication token')
-    }
-
-    // deconstructing user_id from the jwt token in cookies
-    const { user_id } = jwt.verify(token, jwtSecret)
-
-    // if user_id is not found throw error
-    if (!user_id) {
-      throw new Error('Invalid authentication token')
-    }
-
-    // authorization check to see if host_id matches the user_id from jwt token
-    const houseObj = await db.query(
-      `SELECT * FROM houses WHERE house_id = ${house_id}`
-    )
-
-    if (!houseObj.rows.length) throw new Error('House Id not found.')
-
-    // get host_id from response
-    const host_id = houseObj.rows[0].host_id
-
-    // throw new error if user_id does not match host_id from db
-    if (host_id !== user_id) throw new Error('You are not authorized')
-
     const { rows } = await db.query(finalQueryStr)
     if (!rows.length) {
       throw new Error('There was an error with the update')
     }
-    res.json(rows)
+    let house = rows[0]
+
+    // Update photos
+    if (photos && photos.length) {
+      let { rows: photosRows } = await db.query(`
+        SELECT * FROM house_pics WHERE house_id = ${house_id}
+      `)
+      photosRows = photosRows.map((p, i) => {
+        if (photos[i]) {
+          p.photo = photos[i]
+        }
+        return p
+      })
+      let photosQuery = 'UPDATE house_pics SET photo = (case '
+      photosRows.forEach((p, i) => {
+        photosQuery += `when house_pics_id = ${p.id} then '${p.photo}' `
+      })
+      photosQuery += 'end) WHERE house_pics_id in ('
+      photosRows.forEach((p, i) => {
+        photosQuery += `${p.id}, `
+      })
+      photosQuery = photosQuery.slice(0, -2)
+      photosQuery += ') RETURNING *'
+      const { rows: updatedPhotos } = await db.query(photosQuery)
+      house.images = updatedPhotos.map((p) => p.photo)
+    }
+    res.json(house)
+
+    // Errors
   } catch (err) {
     res.json({ error: err.message })
   }
@@ -215,21 +334,12 @@ router.patch('/houses/:house_id', async (req, res) => {
 router.delete('/houses/:house_id', async (req, res) => {
   try {
     let house_id = req.params.house_id
-    // getting the jwt token from cookies
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
     let token = req.cookies.jwt
-
-    // if token does not exist or is not valid, throw error
-    if (!token) {
-      throw new Error('Invalid authentication token')
-    }
-
-    // deconstructing user_id from the jwt token in cookies
     const { user_id } = jwt.verify(token, jwtSecret)
-
-    // if user_id is not found throw error
-    if (!user_id) {
-      throw new Error('Invalid authentication token')
-    }
 
     // authorization check to see if host_id matches the user_id from jwt token
     const houseObj = await db.query(
