@@ -1,8 +1,8 @@
 // Import files
 import { Router } from 'express'
 import db from '../db.js'
+const jwtSecret = process.env.JWTSECRET
 import jwt from 'jsonwebtoken'
-const jwtSecret = process.env.JWSECRET
 
 // Create router
 const router = Router()
@@ -10,7 +10,10 @@ const router = Router()
 // Define a POST route for reviews
 router.post('/reviews', async (req, res) => {
   try {
-    // Validate Token
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
       throw new Error('Invalid authentication token')
@@ -18,10 +21,6 @@ router.post('/reviews', async (req, res) => {
 
     // Deconstract request body
     const { house_id, rating, review_text } = req.body
-
-    // Get current date
-    let date = new Date()
-    date = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate()
 
     // Define finalQuery to INSERT newReview into DB
     let finalQuery = `
@@ -35,7 +34,7 @@ router.post('/reviews', async (req, res) => {
     VALUES(
       '${house_id}',
       '${decodedToken.user_id}',
-      '${date}',
+      CURRENT_TIMESTAMP,
       '${rating}',
       '${review_text}'
     )
