@@ -76,7 +76,11 @@ router.post('/signup', async (req, res) => {
     const token = jwt.sign(payload, jwtSecret)
 
     // inserting jwt token in cookie
-    res.cookie('jwt', token)
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none'
+    })
 
     // Send response back
     const signupResponse = {
@@ -132,7 +136,11 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(payload, jwtSecret)
 
     // inserting jwt token in cookie
-    res.cookie('jwt', token)
+    res.cookie('jwt', token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none'
+    })
 
     // Send response back
     const loginResponse = {
