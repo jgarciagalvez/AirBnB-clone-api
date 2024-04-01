@@ -1,8 +1,8 @@
 // Import files
 import { Router } from 'express'
 import db from '../db.js'
+const jwtSecret = process.env.JWTSECRET
 import jwt from 'jsonwebtoken'
-const jwtSecret = process.env.JWSECRET
 
 // Create router
 const router = Router()
@@ -10,7 +10,10 @@ const router = Router()
 // Define a POST route for reviews
 router.post('/reviews', async (req, res) => {
   try {
-    // Validate Token
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
     const decodedToken = jwt.verify(req.cookies.jwt, jwtSecret)
     if (!decodedToken || !decodedToken.user_id || !decodedToken.email) {
       throw new Error('Invalid authentication token')
@@ -18,10 +21,6 @@ router.post('/reviews', async (req, res) => {
 
     // Deconstract request body
     const { house_id, rating, review_text } = req.body
-
-    // Get current date
-    let date = new Date()
-    date = date.getFullYear() + '-' + date.getMonth() + '-' + date.getDate()
 
     // Define finalQuery to INSERT newReview into DB
     let finalQuery = `
@@ -35,7 +34,7 @@ router.post('/reviews', async (req, res) => {
     VALUES(
       '${house_id}',
       '${decodedToken.user_id}',
-      '${date}',
+      CURRENT_TIMESTAMP,
       '${rating}',
       '${review_text}'
     )
@@ -73,10 +72,11 @@ router.get('/reviews', async (req, res) => {
     let sqlquery = `
       SELECT reviews.*, users.first_name, users.last_name, users.profile_pic FROM reviews
       LEFT JOIN users ON users.user_id = reviews.reviewer_id
-      WHERE house_id = ${req.query.house_id}
-      ORDER BY review_date DESC
+      WHERE reviews.house_id = ${req.query.house_id}
+      ORDER BY reviews.review_date DESC
     `
     let { rows } = await db.query(sqlquery)
+
     const formatter = new Intl.DateTimeFormat('en-US', {
       day: '2-digit',
       month: 'short',
@@ -90,7 +90,7 @@ router.get('/reviews', async (req, res) => {
         last_name: r.last_name,
         profile_pic: r.profile_pic
       }
-      r.date = formatter.format(new Date(r.date))
+      r.review_date = formatter.format(new Date(r.review_date))
       delete r.first_name
       delete r.last_name
       delete r.profile_pic
@@ -130,7 +130,6 @@ router.delete('/reviews/:review_id', async (req, res) => {
     }
     res.json(rows)
   } catch (err) {
-    console.log(err.message)
     res.json(err.message)
   }
 })

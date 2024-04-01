@@ -20,12 +20,10 @@ router.get('/users', async (req, res) => {
 router.get('/profile', async (req, res) => {
   try {
     // Validate token
-    let token = req.cookies.jwt
-    if (!token) {
+    if (!req.cookies.jwt) {
       throw new Error('No authorisation token found')
     }
-
-    // Deconstructing user_id from the jwt token in cookies
+    let token = req.cookies.jwt
     const { user_id } = jwt.verify(token, jwtSecret)
 
     // Fetch data
@@ -44,11 +42,11 @@ router.get('/profile', async (req, res) => {
 
 router.patch('/profile', async (req, res) => {
   try {
-    // Validate toketn
-    let token = req.cookies.jwt
-    if (!token) {
+    // Validate token
+    if (!req.cookies.jwt) {
       throw new Error('No authorisation token found')
     }
+    let token = req.cookies.jwt
     const { user_id } = jwt.verify(token, jwtSecret)
 
     // Deconstructing fields from request

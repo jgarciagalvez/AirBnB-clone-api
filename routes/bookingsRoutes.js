@@ -23,16 +23,37 @@ router.post('/bookings', async (req, res) => {
     // USER VERIFICATION
     const decodedToken = decodeToken(req.cookies.jwt)
 
-    // CREATE NEW BOOKING
+    // Validate fields
+    let { house_id, check_in_date, check_out_date, message, price_per_night } =
+      req.body
+    if (!house_id || !check_in_date || !check_out_date || !message) {
+      throw new Error(
+        'house_id, check_in_date, check_out_date, and message are required'
+      )
+    }
+
+    // Calculate total nights
+    let checkingDate = new Date(check_in_date)
+    let checkoutDate = new Date(check_out_date)
+    if (checkoutDate <= checkingDate) {
+      throw new Error('to_date must be after from_date')
+    }
+    const totalNights = Math.round(
+      (checkoutDate - checkingDate) / (1000 * 60 * 60 * 24)
+    )
+    // Calculate total price
+    const totalPrice = totalNights * price_per_night
+
     // INSERT Query with post parameters and forcing guest_id to be the user making the post request
     const { rows } = await db.query(`
-      INSERT INTO bookings (guest_id, house_id, check_in_date, check_out_date, total_price)
+      INSERT INTO bookings (guest_id, house_id, check_in_date, check_out_date, nights, total_price)
       VALUES (
         ${decodedToken.user_id},
-        ${req.body.house_id},
-        '${req.body.check_in_date}',
-        '${req.body.check_out_date}',
-        ${req.body.total_price}
+        ${house_id},
+        '${check_in_date}',
+        '${check_out_date}',
+        ${totalNights},
+        ${totalPrice}
         )
       RETURNING *
     `)
@@ -50,9 +71,32 @@ router.get('/bookings', async (req, res) => {
     const decodedToken = decodeToken(req.cookies.jwt)
 
     // Fetch bookings from DB based on user_id making the request
-    const { rows } = await db.query(
-      `SELECT * FROM bookings WHERE guest_id = ${decodedToken.user_id} ORDER BY check_in_date DESC`
-    )
+
+    let query = `
+      SELECT
+        TO_CHAR(bookings.check_in_date, 'D Mon yyyy') AS check_in_date,
+        TO_CHAR(bookings.check_out_date, 'D Mon yyyy') AS check_out_date,
+        bookings.nights,
+        bookings.total_price,
+        houses.house_id,
+        houses.price_per_night,
+        houses.location,
+        houses.bedrooms,
+        houses.bathrooms,
+        houses.review_count,
+        houses.rating,
+        hp.photo
+      FROM bookings
+      LEFT JOIN houses ON houses.house_id = bookings.house_id
+      LEFT JOIN (
+          SELECT DISTINCT ON (house_id) house_id, photo
+          FROM house_pics
+      ) AS hp ON hp.house_id = houses.house_id
+      WHERE bookings.guest_id = ${decodedToken.user_id}
+      ORDER BY bookings.check_in_date DESC
+    `
+
+    const { rows } = await db.query(query)
 
     // Throw Error if the userid provided is not on database or
     if (!rows.length) {
