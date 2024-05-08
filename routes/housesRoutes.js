@@ -202,6 +202,48 @@ router.get('/houses/:house_id', async (req, res) => {
   }
 })
 
+// Define a route for editing a single house /houses/:house_id/edit
+router.get('/houses/:house_id/edit', async (req, res) => {
+  try {
+    // Validate token
+    if (!req.cookies.jwt) {
+      throw new Error('No authorisation token found')
+    }
+    let token = req.cookies.jwt
+    const { user_id } = jwt.verify(token, jwtSecret)
+
+    // authorization check to see if host_id matches the user_id from jwt token
+    const house_id = req.params.house_id
+
+    // Fetch House
+    const { rows } = await db.query(
+      `SELECT * FROM houses WHERE house_id = ${house_id}`
+    )
+    if (!rows.length) {
+      throw new Error('Property not found.')
+    }
+
+    // throw new error if user_id does not match host_id from db
+    if (rows[0].host_id !== user_id)
+      throw new Error('Incorrect authorisation token')
+
+    // Declare house object
+    let house = rows[0]
+
+    // Fetch photos
+    const { rows: photosRows } = await db.query(
+      `SELECT * FROM house_pics WHERE house_id = ${house_id}`
+    )
+    house.images = photosRows.map((p) => p.photo)
+
+    res.json(house)
+
+    // Errors
+  } catch (err) {
+    res.json({ error: err.message })
+  }
+})
+
 // LISTINGS ROUTE
 router.get('/listings', async (req, res) => {
   try {
